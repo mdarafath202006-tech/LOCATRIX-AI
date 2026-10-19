@@ -4,6 +4,10 @@ LOCATRIX is a proposed end-to-end location assistance system for situations wher
 
 **This repository currently contains the software prototype, a browser-based admin dashboard, and a command-line positioning simulation. It is not yet a complete, hardware-connected tracking product.** The dashboard uses illustrative data; it does not locate real people or receive live radio packets.
 
+## Live dashboard preview
+
+Try the browser-based dashboard: **[locatrix-ai.vercel.app](https://locatrix-ai.vercel.app/)**. This is a UI demonstration with illustrative data, not live location tracking or a hardware-connected deployment.
+
 ## Project at a glance
 
 The intended system combines:
