@@ -16,7 +16,7 @@
 <body>
 <header class="topbar">
 <a class="brand" href="#home" aria-label="LOCATRIX home"><span class="mark">L</span><span><strong>LOCATRIX</strong><small>Resilient positioning lab</small></span></a>
-<nav class="toplinks" id="nav"><a href="#overview">Overview</a><a href="#demo">Interactive demo</a><a href="#workflow">Workflow</a><a href="#architecture">Architecture</a><a href="#validation">Validation</a></nav>
+<nav class="toplinks" id="nav"><a href="#overview">Overview</a><a href="#demo">Interactive demo</a><a href="#workflow">Workflow</a><a href="#architecture">Architecture</a><a href="#offline-lora">Offline + LoRa</a><a href="#validation">Validation</a></nav>
 <div class="top-actions"><span class="status"><i class="dot"></i> Prototype preview</span><button class="mobile-menu" id="menuBtn" aria-label="Toggle navigation">☰</button></div>
 </header>
 <main id="home" class="wrap">
@@ -24,8 +24,8 @@
 <div class="hero-copy">
 <div class="eyebrow">Project concept · Engineering prototype</div>
 <h1>Find a path when <span>GPS fades.</span></h1>
-<p class="lead">LOCATRIX explores resilient pedestrian positioning by combining smartphone motion sensors, visual cues, and sensor-fusion methods to estimate movement when GNSS signals are weak, unavailable, or unreliable.</p>
-<div class="hero-actions"><a class="btn primary" href="#demo">▶ Explore interactive demo</a><a class="btn secondary" href="#workflow">Understand the workflow ↘</a></div>
+<p class="lead">LOCATRIX explores resilient pedestrian positioning by combining smartphone motion sensors, visual cues, and sensor fusion to estimate movement when GNSS is unreliable — then send updates over Bluetooth and LoRa without requiring internet on the phone.</p>
+<div class="hero-actions"><a class="btn primary" href="#demo">▶ Explore interactive demo</a><a class="btn secondary" href="#workflow">Understand the workflow ↘</a><a class="btn secondary" href="#offline-lora">Offline + LoRa design</a></div>
 <p class="fineprint">Research prototype · Relative movement visualization · No live person tracking</p>
 </div>
 <div class="hero-visual">
@@ -46,7 +46,7 @@
 <div class="grid3">
 <article class="panel"><div class="panel-icon">⌁</div><h3>The problem</h3><p>GNSS signals can be blocked, reflected, or too weak to provide stable positioning. A continuous satellite fix cannot be assumed in every environment.</p><div class="pillrow"><span class="pill">Indoor</span><span class="pill">Underground</span><span class="pill">Urban canyon</span></div></article>
 <article class="panel"><div class="panel-icon">⌖</div><h3>The approach</h3><p>Estimate relative movement from inertial measurements and, where available, camera-derived visual motion. Combine evidence to reduce the weaknesses of any single sensor.</p><div class="pillrow"><span class="pill">IMU</span><span class="pill">Visual cues</span><span class="pill">Sensor fusion</span></div></article>
-<article class="panel"><div class="panel-icon">⇢</div><h3>The intended outcome</h3><p>A local trajectory estimate with uncertainty and measurable drift, designed to keep providing movement information without requiring a continuous GNSS fix.</p><div class="pillrow"><span class="pill">Relative track</span><span class="pill">Offline-capable goal</span></div></article>
+<article class="panel"><div class="panel-icon">⇢</div><h3>The intended outcome</h3><p>A local trajectory estimate with uncertainty and measurable drift, sent through a Bluetooth-linked LoRa node to a gateway and web dashboard when the gateway has internet access.</p><div class="pillrow"><span class="pill">Relative track</span><span class="pill">Offline-capable goal</span></div></article>
 </div>
 </section>
 <section id="demo" class="section">
@@ -103,8 +103,25 @@
 </div>
 <div class="callout"><b>Important distinction:</b> sensor fusion is an estimation method, not automatically AI. A machine-learning component should be added only for a clearly defined prediction task, trained on documented data, and compared against a non-ML baseline.</div>
 </section>
-<section id="ai" class="section">
-<div class="section-head"><div><div class="section-index">05 / AI & SENSOR FUSION</div><h2>Use AI where it can be measured.</h2></div><p>LOCATRIX should not treat “AI” as a magic accuracy switch. The model, labels, baseline, and evaluation procedure must be specified before claiming an improvement.</p></div>
+
+<section id="offline-lora" class="section">
+<div class="section-head"><div><div class="section-index">05 / OFFLINE COMMUNICATION DESIGN</div><h2>Phone → Bluetooth → LoRa → Gateway → Dashboard.</h2></div><p>LOCATRIX is designed so a user's phone does not need mobile data or Wi-Fi to send a location update. Position estimation and long-range communication are separate subsystems: the phone estimates local movement; the radio link transports the update.</p></div>
+<div class="workflow">
+<article class="step"><h3>Estimate movement on phone</h3><p>Accelerometer, gyroscope and heading sensors feed pedestrian dead reckoning and the planned AI-assisted estimation pipeline. A starting reference is needed and drift must be measured.</p><small>Phone · local computation</small></article>
+<article class="step"><h3>Bluetooth to LOCATRIX node</h3><p>The phone sends a compact location/trajectory update over Bluetooth to a separate paired LOCATRIX hardware node. Bluetooth is the short-range phone-to-device link.</p><small>BLE / Bluetooth</small></article>
+<article class="step"><h3>Transmit over LoRa</h3><p>The hardware node sends a small packet over LoRa to a reachable LoRa receiver or gateway. LoRa is the radio communication layer; it does not calculate the user's position.</p><small>LoRa · long-range, low data rate</small></article>
+<article class="step"><h3>Gateway and dashboard</h3><p>A gateway forwards received packets to the backend/cloud when it has internet access. The web dashboard can then show the latest reported user position to authorized viewers/admins.</p><small>Gateway → cloud → web</small></article>
+</div>
+<div class="architecture" style="margin-top:16px">
+<div class="arch-node"><h3>01 · User phone</h3><ul><li>IMU / heading sensors</li><li>Relative position estimate</li><li>Bluetooth connection</li><li>No mobile internet required for the radio path</li></ul></div><div class="arch-arrow">→</div>
+<div class="arch-node"><h3>02 · LOCATRIX radio node</h3><ul><li>Separate LoRa-capable hardware</li><li>Bluetooth interface to phone</li><li>Packet encoding and radio transmission</li><li>Power, antenna and enclosure</li></ul></div><div class="arch-arrow">→</div>
+<div class="arch-node"><h3>03 · LoRa gateway + service</h3><ul><li>LoRa receiver / gateway</li><li>Internet backhaul for cloud updates</li><li>Backend stores received reports</li><li>Dashboard for authorized viewers</li></ul></div>
+<div class="arch-foot">Important: the phone and LoRa node can communicate without internet, and LoRa radio can carry packets without internet. A live cloud dashboard needs a gateway with internet backhaul; if all internet is unavailable, cloud updates wait until a connected gateway can forward them. LoRa coverage, local regulations, radio hardware and packet delivery must be tested.</div>
+</div>
+<div class="callout"><b>Hardware reality:</b> ordinary smartphones do not normally transmit LoRa directly. A separate LoRa-capable device is needed for each mobile endpoint that must send/receive LoRa, paired to its phone over Bluetooth. A receiving user can use their own paired node/phone, or a gateway can receive reports centrally. Exact hardware and topology are implementation decisions, not features proved by this UI demo.</div>
+</section>
+\n<section id="ai" class="section">
+<div class="section-head"><div><div class="section-index">06 / AI & SENSOR FUSION</div><h2>Use AI where it can be measured.</h2></div><p>LOCATRIX should not treat “AI” as a magic accuracy switch. The model, labels, baseline, and evaluation procedure must be specified before claiming an improvement.</p></div>
 <div class="grid3">
 <article class="panel"><div class="panel-icon">01</div><h3>Define one ML task</h3><p>Candidate task: classify motion windows as walking, stationary, or uncertain using engineered features from accelerometer and gyroscope sequences. This is a proposal, not a trained model claim.</p></article>
 <article class="panel"><div class="panel-icon">02</div><h3>Build a reproducible dataset</h3><p>Record timestamped sensor windows across participants and walking conditions, with consent and reference labels. Split training and test data by trial or participant to reduce leakage.</p></article>
@@ -113,7 +130,7 @@
 <div class="pillrow" style="margin-top:15px"><span class="pill">Possible fusion: complementary / Kalman-style filter</span><span class="pill">Classification: precision · recall · F1</span><span class="pill">Trajectory: MAE · RMSE · final position error</span><span class="pill">Robustness: drift per distance or time</span></div>
 </section>
 <section id="validation" class="section">
-<div class="section-head"><div><div class="section-index">06 / TESTING & VALIDATION</div><h2>Evidence before accuracy claims.</h2></div><p>Every reported result should state the environment, route length, device, reference method, repeat count, and whether GNSS was used for evaluation.</p></div>
+<div class="section-head"><div><div class="section-index">07 / TESTING & VALIDATION</div><h2>Evidence before accuracy claims.</h2></div><p>Every reported result should state the environment, route length, device, reference method, repeat count, and whether GNSS was used for evaluation.</p></div>
 <div class="table-wrap"><table><thead><tr><th>Test area</th><th>What to measure</th><th>Why it matters</th><th>Current status</th></tr></thead><tbody>
 <tr><td>Sensor ingestion</td><td>Sampling gaps, timestamps, axis units</td><td>Checks data quality before estimation</td><td><span class="state prototype">UI ONLY</span></td></tr>
 <tr><td>Step / motion estimation</td><td>Event precision, recall, F1</td><td>Shows whether motion events are detected correctly</td><td><span class="state planned">PLANNED</span></td></tr>
@@ -124,7 +141,7 @@
 </tbody></table></div>
 </section>
 <section id="roadmap" class="section">
-<div class="section-head"><div><div class="section-index">07 / IMPLEMENTATION ROADMAP</div><h2>A realistic path from demo to validated prototype.</h2></div><p>Build in layers so each milestone produces a testable result instead of depending on a single large integration.</p></div>
+<div class="section-head"><div><div class="section-index">08 / IMPLEMENTATION ROADMAP</div><h2>A realistic path from demo to validated prototype.</h2></div><p>Build in layers so each milestone produces a testable result instead of depending on a single large integration.</p></div>
 <div class="grid3">
 <article class="panel"><div class="panel-icon">✓</div><h3>Milestone 1 · Interface</h3><p>Present the project concept, system workflow, simulated path, and explicit prototype boundaries.</p><div class="pillrow"><span class="state prototype">CURRENT DEMO</span></div></article>
 <article class="panel"><div class="panel-icon">02</div><h3>Milestone 2 · Real sensor logging</h3><p>Capture smartphone IMU samples, inspect timestamps and units, export repeatable test logs, and document device constraints.</p><div class="pillrow"><span class="state planned">NEXT</span></div></article>
@@ -132,7 +149,7 @@
 </div>
 </section>
 <section id="faq" class="section">
-<div class="section-head"><div><div class="section-index">08 / PANEL-READY EXPLANATIONS</div><h2>Questions you may be asked.</h2></div><p>Use precise wording during your review: distinguish what the prototype shows from what the complete system is intended to achieve.</p></div>
+<div class="section-head"><div><div class="section-index">09 / PANEL-READY EXPLANATIONS</div><h2>Questions you may be asked.</h2></div><p>Use precise wording during your review: distinguish what the prototype shows from what the complete system is intended to achieve.</p></div>
 <div class="faq">
 <details><summary>Does LOCATRIX completely replace GPS?</summary><p>The goal is to estimate relative movement when GNSS is unreliable. Without an external reference or known starting point, the system cannot promise globally accurate latitude and longitude, and inertial drift accumulates.</p></details>
 <details><summary>Where exactly is the AI?</summary><p>The current demo does not contain an integrated, trained AI model. A future ML task must be defined, trained on documented data, and evaluated against a baseline before we can claim a benefit.</p></details>
